@@ -1,60 +1,66 @@
 const MODELS = window.MODELS || [];
+const $ = (id) => document.getElementById(id);
 
 const els = {
-  text: document.getElementById("inputText"),
-  model: document.getElementById("modelSelect"),
-  out: document.getElementById("outputTokens"),
-  presets: document.getElementById("outputPresets"),
-  mode: document.getElementById("countMode"),
-  statChars: document.getElementById("statChars"),
-  statWords: document.getElementById("statWords"),
-  statLines: document.getElementById("statLines"),
-  statTokens: document.getElementById("statTokens"),
-  priceIn: document.getElementById("priceIn"),
-  priceOut: document.getElementById("priceOut"),
-  priceCtx: document.getElementById("priceCtx"),
-  priceTok: document.getElementById("priceTok"),
-  priceTokNote: document.getElementById("priceTokNote"),
-  modelNote: document.getElementById("modelNote"),
-  costIn: document.getElementById("costIn"),
-  costOut: document.getElementById("costOut"),
-  costTotal: document.getElementById("costTotal"),
-  costInSub: document.getElementById("costInSub"),
-  costOutSub: document.getElementById("costOutSub"),
-  costTotalSub: document.getElementById("costTotalSub"),
-  perNote: document.getElementById("perNote"),
-  tbody: document.querySelector("#compareTable tbody"),
-  estimateNotice: document.getElementById("estimateNotice"),
+  text: $("inputText"),
+  model: $("modelSelect"),
+  out: $("outputTokens"),
+  presets: $("outputPresets"),
+  mode: $("countMode"),
+  statChars: $("statChars"),
+  statWords: $("statWords"),
+  statLines: $("statLines"),
+  statTokens: $("statTokens"),
+  modelName: $("modelName"),
+  modelProvider: $("modelProvider"),
+  priceIn: $("priceIn"),
+  priceOut: $("priceOut"),
+  priceCtx: $("priceCtx"),
+  priceTok: $("priceTok"),
+  priceTokNote: $("priceTokNote"),
+  modelNote: $("modelNote"),
+  costTotal: $("costTotal"),
+  costTotalSub: $("costTotalSub"),
+  costIn: $("costIn"),
+  costOut: $("costOut"),
+  costInSub: $("costInSub"),
+  costOutSub: $("costOutSub"),
+  barIn: $("barIn"),
+  barOut: $("barOut"),
+  perNote: $("perNote"),
+  compareList: $("compareList"),
+  estimateNotice: $("estimateNotice"),
+  themeToggle: $("themeToggle"),
 };
 
 let encoder = null;
-let encodeFailed = false;
 let inputTokens = 0;
 
 function estimateTokens(text) {
-  if (!text) return 0;
-  return Math.ceil(text.length / 4);
+  return text ? Math.ceil(text.length / 4) : 0;
 }
 
 function countTokens(text) {
   if (!text) return 0;
-  if (encoder) return encoder.encode(text).length;
-  return estimateTokens(text);
+  return encoder ? encoder.encode(text).length : estimateTokens(text);
 }
 
 function fmtNum(n) {
   return n.toLocaleString("en-US");
 }
 
+function fmtPrice(p) {
+  return "$" + (p < 1 ? p.toFixed(2) : p.toFixed(2));
+}
+
 function fmtUsd(n) {
-  if (!isFinite(n) || n === 0) return "$0.00";
-  if (n < 0.000001) return "$" + n.toExponential(2);
-  if (n < 0.01) return "$" + n.toFixed(6);
-  if (n < 1) return "$" + n.toFixed(4);
-  return (
-    "$" +
-    n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-  );
+  if (!isFinite(n) || n <= 0) return "$0.00";
+  if (n >= 1) {
+    return "$" + n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  if (n >= 0.01) return "$" + n.toFixed(4);
+  if (n < 0.0000001) return "<$0.0000001";
+  return "$" + n.toFixed(8).replace(/0+$/, "");
 }
 
 function costOf(tokens, pricePer1M) {
@@ -73,13 +79,13 @@ function outputTokenCount() {
 function populateModels() {
   const providers = [...new Set(MODELS.map((m) => m.provider))];
   els.model.innerHTML = "";
-  for (const p of providers) {
+  for (const provider of providers) {
     const group = document.createElement("optgroup");
-    group.label = p;
-    for (const m of MODELS.filter((x) => x.provider === p)) {
+    group.label = provider;
+    for (const m of MODELS.filter((x) => x.provider === provider)) {
       const opt = document.createElement("option");
       opt.value = m.id;
-      opt.textContent = `${m.name} — $${m.inPrice}/$${m.outPrice} per 1M`;
+      opt.textContent = `${m.name} · ${fmtPrice(m.inPrice)} / ${fmtPrice(m.outPrice)} per 1M`;
       group.appendChild(opt);
     }
     els.model.appendChild(group);
@@ -87,64 +93,82 @@ function populateModels() {
   els.model.value = MODELS[0]?.id || "";
 }
 
-function renderPricingCard(m) {
-  els.priceIn.textContent = `$${m.inPrice.toFixed(2)}`;
-  els.priceOut.textContent = `$${m.outPrice.toFixed(2)}`;
+function renderModelCard(m) {
+  els.modelName.textContent = m.name;
+  els.modelProvider.textContent = m.provider;
+  els.priceIn.textContent = fmtPrice(m.inPrice);
+  els.priceOut.textContent = fmtPrice(m.outPrice);
   els.priceCtx.textContent = m.context;
   els.priceTok.textContent = m.exact ? m.tokenizer : "≈ 4 chars/token";
   els.priceTokNote.textContent = m.exact ? "exact count" : "estimated count";
-  if (els.modelNote) els.modelNote.textContent = m.note || "";
+  els.modelNote.textContent = m.note || "";
 }
 
 function renderResults(m) {
   const outTokens = outputTokenCount();
   const inCost = costOf(inputTokens, m.inPrice);
   const outCost = costOf(outTokens, m.outPrice);
+  const total = inCost + outCost;
 
   els.statTokens.textContent = fmtNum(inputTokens);
+  els.costTotal.textContent = fmtUsd(total);
+  els.costTotalSub.textContent = `${m.name} · ${fmtNum(inputTokens)} in + ${fmtNum(outTokens)} out`;
   els.costIn.textContent = fmtUsd(inCost);
   els.costOut.textContent = fmtUsd(outCost);
-  els.costTotal.textContent = fmtUsd(inCost + outCost);
-  els.costInSub.textContent = `${fmtNum(inputTokens)} tokens × $${m.inPrice}/1M`;
-  els.costOutSub.textContent = `${fmtNum(outTokens)} tokens × $${m.outPrice}/1M`;
-  els.costTotalSub.textContent = `${m.name} · input + output`;
+  els.costInSub.textContent = `${fmtNum(inputTokens)} × ${fmtPrice(m.inPrice)}/1M`;
+  els.costOutSub.textContent = `${fmtNum(outTokens)} × ${fmtPrice(m.outPrice)}/1M`;
 
-  if (inCost + outCost > 0) {
-    els.perNote.textContent = `For 1,000 identical requests: ${fmtUsd(
-      (inCost + outCost) * 1000
-    )} · for 1,000,000 requests: ${fmtUsd((inCost + outCost) * 1_000_000)}`;
-  } else {
-    els.perNote.textContent = "";
-  }
+  const inPct = total > 0 ? (inCost / total) * 100 : 0;
+  els.barIn.style.width = inPct + "%";
+  els.barOut.style.width = (total > 0 ? 100 - inPct : 0) + "%";
+
+  els.perNote.textContent =
+    total > 0
+      ? `1,000 requests ≈ ${fmtUsd(total * 1000)} · 1 million requests ≈ ${fmtUsd(total * 1_000_000)}`
+      : "";
 }
 
 function renderCompare() {
   const text = els.text.value;
   const outTokens = outputTokenCount();
-  const exactTokens = inputTokens;
 
   const rows = MODELS.map((m) => {
-    const inTok = m.exact ? exactTokens : estimateTokens(text);
+    const inTok = m.exact ? inputTokens : estimateTokens(text);
     const inCost = costOf(inTok, m.inPrice);
     const outCost = costOf(outTokens, m.outPrice);
     return { m, inTok, inCost, outCost, total: inCost + outCost };
   }).sort((a, b) => a.total - b.total);
 
-  els.tbody.innerHTML = rows
-    .map(
-      ({ m, inTok, inCost, outCost, total }) => `
-      <tr data-id="${m.id}" class="${m.id === els.model.value ? "selected" : ""}">
-        <td>${m.name}${m.exact ? "" : ' <span class="provider-tag">est.</span>'}</td>
-        <td><span class="provider-tag">${m.provider}</span></td>
-        <td class="num">${fmtNum(inTok)}</td>
-        <td class="num">$${m.inPrice.toFixed(2)}</td>
-        <td class="num">$${m.outPrice.toFixed(2)}</td>
-        <td class="num">${fmtUsd(inCost)}</td>
-        <td class="num">${fmtUsd(outCost)}</td>
-        <td class="num total-cell">${fmtUsd(total)}</td>
-      </tr>`
-    )
+  const max = rows.length ? rows[rows.length - 1].total : 0;
+  const currentId = els.model.value;
+
+  els.compareList.innerHTML = rows
+    .map(({ m, inTok, inCost, outCost, total }, i) => {
+      const pct = max > 0 ? Math.max((total / max) * 100, 2) : 0;
+      const best = i === 0 && total > 0;
+      return `
+      <div class="crow ${best ? "best" : ""} ${m.id === currentId ? "selected" : ""}" data-id="${m.id}" role="button" tabindex="0">
+        <div class="crow-info">
+          <div class="crow-name">
+            ${m.name}
+            <span class="chip">${m.provider}</span>
+            ${best ? '<span class="badge-best">Best value</span>' : ""}
+            ${m.exact ? "" : '<span class="tag-est">Est.</span>'}
+          </div>
+          <div class="crow-sub">${fmtNum(inTok)} tokens · input ${fmtUsd(inCost)} · output ${fmtUsd(outCost)}</div>
+        </div>
+        <div class="crow-cost">${fmtUsd(total)}</div>
+        <div class="crow-bar"><span style="width:${pct}%"></span></div>
+      </div>`;
+    })
     .join("");
+}
+
+function syncPresetActive() {
+  const v = String(outputTokenCount());
+  els.presets.querySelectorAll("button").forEach((b) => {
+    b.classList.toggle("active", b.dataset.v === v);
+  });
 }
 
 function refreshInputStats() {
@@ -158,20 +182,23 @@ function refreshInputStats() {
 }
 
 function refreshAll() {
-  renderPricingCard(selectedModel());
+  renderModelCard(selectedModel());
   refreshInputStats();
+  syncPresetActive();
 }
 
 let debounceTimer = null;
 els.text.addEventListener("input", () => {
   clearTimeout(debounceTimer);
-  debounceTimer = setTimeout(refreshInputStats, 120);
+  debounceTimer = setTimeout(refreshInputStats, 110);
 });
 
 els.model.addEventListener("change", refreshAll);
+
 els.out.addEventListener("input", () => {
   renderResults(selectedModel());
   renderCompare();
+  syncPresetActive();
 });
 
 els.presets.addEventListener("click", (e) => {
@@ -180,27 +207,39 @@ els.presets.addEventListener("click", (e) => {
   els.out.value = btn.dataset.v === "match" ? Math.max(inputTokens, 0) : btn.dataset.v;
   renderResults(selectedModel());
   renderCompare();
+  syncPresetActive();
 });
 
-els.tbody.addEventListener("click", (e) => {
-  const tr = e.target.closest("tr");
-  if (!tr || !tr.dataset.id) return;
-  els.model.value = tr.dataset.id;
+function selectModel(id) {
+  els.model.value = id;
   refreshAll();
-  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+els.compareList.addEventListener("click", (e) => {
+  const row = e.target.closest(".crow");
+  if (row) selectModel(row.dataset.id);
+});
+
+els.compareList.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const row = e.target.closest(".crow");
+  if (row) {
+    e.preventDefault();
+    selectModel(row.dataset.id);
+  }
 });
 
 function setModeBadge(state) {
-  els.mode.className = "badge";
+  els.mode.className = "pill";
   if (state === "loading") {
-    els.mode.classList.add("badge-loading");
-    els.mode.textContent = "loading tokenizer…";
+    els.mode.classList.add("pill-loading");
+    els.mode.textContent = "Loading tokenizer…";
   } else if (state === "exact") {
-    els.mode.classList.add("badge-exact");
-    els.mode.textContent = "exact count · o200k_base";
+    els.mode.classList.add("pill-exact");
+    els.mode.textContent = "Exact · o200k_base";
   } else {
-    els.mode.classList.add("badge-estimate");
-    els.mode.textContent = "estimated count";
+    els.mode.classList.add("pill-estimate");
+    els.mode.textContent = "Estimated count";
   }
 }
 
@@ -213,14 +252,27 @@ async function loadTokenizer() {
     encoder = new Tiktoken(o200k.default);
     setModeBadge("exact");
   } catch (err) {
-    console.warn("Tokenizer failed to load, using estimates.", err);
-    encodeFailed = true;
+    console.warn("Tokenizer failed to load; using estimates.", err);
     setModeBadge("estimate");
     els.estimateNotice.hidden = false;
   }
   refreshInputStats();
 }
 
+function initTheme() {
+  const saved = localStorage.getItem("theme");
+  const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+  const theme = saved || (prefersDark ? "dark" : "light");
+  document.documentElement.setAttribute("data-theme", theme);
+}
+
+els.themeToggle.addEventListener("click", () => {
+  const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", next);
+  localStorage.setItem("theme", next);
+});
+
+initTheme();
 populateModels();
 setModeBadge("loading");
 refreshAll();
