@@ -15,6 +15,7 @@ const els = {
   priceCtx: document.getElementById("priceCtx"),
   priceTok: document.getElementById("priceTok"),
   priceTokNote: document.getElementById("priceTokNote"),
+  modelNote: document.getElementById("modelNote"),
   costIn: document.getElementById("costIn"),
   costOut: document.getElementById("costOut"),
   costTotal: document.getElementById("costTotal"),
@@ -92,6 +93,7 @@ function renderPricingCard(m) {
   els.priceCtx.textContent = m.context;
   els.priceTok.textContent = m.exact ? m.tokenizer : "≈ 4 chars/token";
   els.priceTokNote.textContent = m.exact ? "exact count" : "estimated count";
+  if (els.modelNote) els.modelNote.textContent = m.note || "";
 }
 
 function renderResults(m) {

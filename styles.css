@@ -240,6 +240,13 @@ select {
   color: var(--muted);
 }
 
+.model-note {
+  margin: 12px 0 0;
+  font-size: 0.82rem;
+  color: var(--muted);
+  min-height: 1.2em;
+}
+
 .output-row {
   display: flex;
   gap: 14px;
