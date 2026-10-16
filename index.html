@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Token Cost Calculator — LLM Token Counter & Pricing</title>
+    <meta
+      name="description"
+      content="Count tokens in any text or code and estimate input, output, and total API cost across GPT-5, GPT-4o, o3, Claude, Gemini, and DeepSeek."
+    />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🧮</text></svg>"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <div class="wrap">
+        <h1>🧮 Token Cost Calculator</h1>
+        <p>
+          Paste any text or code, pick a model, and see exactly what your
+          <strong>input</strong> and <strong>output</strong> tokens cost.
+        </p>
+      </div>
+    </header>
+
+    <main class="wrap">
+      <section class="panel">
+        <div class="panel-head">
+          <h2>1 · Your input text</h2>
+          <span id="countMode" class="badge badge-loading">loading tokenizer…</span>
+        </div>
+        <textarea
+          id="inputText"
+          rows="8"
+          placeholder="Paste your prompt, article, or code here…"
+          spellcheck="false"
+        ></textarea>
+        <div class="stat-row">
+          <div class="stat"><span class="stat-num" id="statChars">0</span><span class="stat-label">Characters</span></div>
+          <div class="stat"><span class="stat-num" id="statWords">0</span><span class="stat-label">Words</span></div>
+          <div class="stat"><span class="stat-num" id="statLines">0</span><span class="stat-label">Lines</span></div>
+          <div class="stat stat-highlight"><span class="stat-num" id="statTokens">0</span><span class="stat-label">Input tokens</span></div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>2 · Choose a model</h2></div>
+        <div class="model-grid">
+          <label class="field">
+            <span>Model</span>
+            <select id="modelSelect"></select>
+          </label>
+          <div class="price-cards">
+            <div class="price-card">
+              <span class="price-label">Input price</span>
+              <span class="price-value" id="priceIn">—</span>
+              <span class="price-unit">per 1M tokens</span>
+            </div>
+            <div class="price-card">
+              <span class="price-label">Output price</span>
+              <span class="price-value" id="priceOut">—</span>
+              <span class="price-unit">per 1M tokens</span>
+            </div>
+            <div class="price-card">
+              <span class="price-label">Context window</span>
+              <span class="price-value" id="priceCtx">—</span>
+              <span class="price-unit">max input</span>
+            </div>
+            <div class="price-card">
+              <span class="price-label">Tokenizer</span>
+              <span class="price-value price-value-sm" id="priceTok">—</span>
+              <span class="price-unit" id="priceTokNote">&nbsp;</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head"><h2>3 · Expected output length</h2></div>
+        <div class="output-row">
+          <label class="field field-grow">
+            <span>Output tokens (what the model will generate)</span>
+            <input id="outputTokens" type="number" min="0" step="1" value="1000" />
+          </label>
+          <div class="presets" id="outputPresets">
+            <button type="button" data-v="500">500</button>
+            <button type="button" data-v="1000">1K</button>
+            <button type="button" data-v="4096">4K</button>
+            <button type="button" data-v="16384">16K</button>
+            <button type="button" data-v="match">= input</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="panel panel-results">
+        <div class="panel-head"><h2>4 · Cost for one request</h2></div>
+        <div class="results-grid">
+          <div class="result">
+            <span class="result-label">Input cost</span>
+            <span class="result-value" id="costIn">$0.00</span>
+            <span class="result-sub" id="costInSub">0 tokens</span>
+          </div>
+          <div class="result">
+            <span class="result-label">Output cost</span>
+            <span class="result-value" id="costOut">$0.00</span>
+            <span class="result-sub" id="costOutSub">0 tokens</span>
+          </div>
+          <div class="result result-total">
+            <span class="result-label">Total cost</span>
+            <span class="result-value" id="costTotal">$0.00</span>
+            <span class="result-sub" id="costTotalSub">input + output</span>
+          </div>
+        </div>
+        <p class="per-note" id="perNote"></p>
+      </section>
+
+      <section class="panel">
+        <div class="panel-head">
+          <h2>5 · Compare all models</h2>
+          <span class="hint">same text · same output length · sorted by total cost</span>
+        </div>
+        <div class="table-scroll">
+          <table id="compareTable">
+            <thead>
+              <tr>
+                <th>Model</th>
+                <th>Provider</th>
+                <th class="num">Input tokens</th>
+                <th class="num">Input $/1M</th>
+                <th class="num">Output $/1M</th>
+                <th class="num">Input cost</th>
+                <th class="num">Output cost</th>
+                <th class="num">Total</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="panel panel-estimate" id="estimateNotice" hidden>
+        <strong>Approximate counts:</strong>
+        OpenAI models use the exact <code>o200k_base</code> tokenizer in your
+        browser. Anthropic, Google, and DeepSeek don't publish browser
+        tokenizers, so their counts are estimated at ~4 characters per token —
+        expect a small margin of error.
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="wrap">
+        <p>
+          Prices in USD per 1M tokens, taken from official provider pricing
+          pages (Oct 2026). Providers change prices often — verify before
+          committing to a budget. Runs fully client-side; your text never
+          leaves this page.
+        </p>
+      </div>
+    </footer>
+
+    <script src="models.js"></script>
+    <script defer src="app.js"></script>
+  </body>
+</html>
