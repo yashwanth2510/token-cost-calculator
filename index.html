@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>TokenCost — LLM token counter & cost estimator</title>
+    <title>TokenCost — LLM token counter &amp; cost estimator</title>
     <meta
       name="description"
       content="Count tokens in any text or code and estimate input, output, and total API cost across the latest frontier models: GPT-6, Claude 5.5, Gemini 4, and DeepSeek V4."
@@ -26,7 +26,7 @@
         <a class="brand" href="./" aria-label="TokenCost home">
           <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
             <rect width="32" height="32" rx="9" fill="url(#bg)" />
-            <path d="M10 11.5h12M16 11.5v9.5" stroke="#fff" stroke-width="2.4" stroke-linecap="round" />
+            <path d="M10 11.5h12M16 11.5v9" stroke="#fff" stroke-width="2.4" stroke-linecap="round" />
             <defs>
               <linearGradient id="bg" x1="0" y1="0" x2="32" y2="32">
                 <stop stop-color="#6366f1" />
@@ -56,6 +56,111 @@
           Count tokens and estimate input, output, and total API cost across the
           latest frontier models — instantly, without your text ever leaving the
           page.
+        </p>
+      </section>
+
+      <section class="card learn" id="learn">
+        <div class="card-head">
+          <h2>Understanding tokens</h2>
+          <span class="muted">The basics — no prior experience needed</span>
+        </div>
+
+        <p class="learn-lead">
+          AI models don't read text the way you do. Before a prompt reaches the
+          model, it's chopped into small pieces called <strong>tokens</strong>.
+          Models read and bill by the token, so understanding them is the first
+          step to predicting and controlling your API costs.
+        </p>
+
+        <div class="example">
+          <div class="example-row">
+            <span class="example-label">Your text</span>
+            <span class="example-text">"Tokenization is fun!"</span>
+          </div>
+          <div class="example-row">
+            <span class="example-label">Becomes 5 tokens</span>
+            <span class="tokens">
+              <span class="tok">Token</span>
+              <span class="tok">ization</span>
+              <span class="tok">&#9251;is</span>
+              <span class="tok">&#9251;fun</span>
+              <span class="tok">!</span>
+            </span>
+          </div>
+        </div>
+
+        <div class="learn-grid">
+          <article class="learn-item">
+            <h3>What is a token?</h3>
+            <p>
+              A token is a chunk of text — a short word like <em>cat</em>, part
+              of a longer word (<em>token</em>&nbsp;+&nbsp;<em>ization</em>), a
+              piece of punctuation, or a single character. Each model has its own
+              fixed vocabulary of roughly 100,000–200,000 tokens, so the same
+              text can split differently between providers.
+            </p>
+          </article>
+
+          <article class="learn-item">
+            <h3>Why tokens matter</h3>
+            <p>
+              Providers charge per token, priced per million and split into two
+              rates: <strong>input</strong> (what you send) and
+              <strong>output</strong> (what the model writes back). Output is
+              usually 3–5× more expensive than input. Your bill is based on token
+              count — not word count.
+            </p>
+          </article>
+
+          <article class="learn-item">
+            <h3>Input vs. output</h3>
+            <p>
+              <strong>Input tokens</strong> are everything you send: your
+              instructions, pasted text or code, and earlier conversation.
+              <strong>Output tokens</strong> are what the model generates. Total
+              cost = <em>input tokens × input price + output tokens × output
+              price</em>.
+            </p>
+          </article>
+
+          <article class="learn-item">
+            <h3>Context window</h3>
+            <p>
+              Every model has a maximum amount of text it can consider at once —
+              input <em>and</em> output combined. This is the context window.
+              Exceed it and older content gets dropped, or the request is
+              rejected.
+            </p>
+          </article>
+        </div>
+
+        <div class="learn-cols">
+          <div>
+            <h3>Rules of thumb</h3>
+            <ul class="learn-list">
+              <li>1 token ≈ 4 characters of English</li>
+              <li>1 token ≈ ¾ of a word</li>
+              <li>100 tokens ≈ 75 words</li>
+              <li>A short paragraph ≈ 100–150 tokens</li>
+              <li>Code, symbols, and non-English text use <em>more</em> tokens per word</li>
+            </ul>
+          </div>
+          <div>
+            <h3>How to spend less</h3>
+            <ul class="learn-list">
+              <li>Send only the context the model actually needs</li>
+              <li>Summarize long chats instead of resending every message</li>
+              <li>Use a smaller, cheaper model for simple tasks</li>
+              <li>Set a max output length so replies can't run away</li>
+              <li>Batch related questions into a single request</li>
+            </ul>
+          </div>
+        </div>
+
+        <p class="learn-foot">
+          Quick estimate: divide a character count by 4 to approximate tokens.
+          This tool counts OpenAI models exactly with the
+          <code>o200k_base</code> tokenizer and approximates the rest.
         </p>
       </section>
 
@@ -165,111 +270,6 @@
         </div>
         <div id="compareList" class="compare-list"></div>
       </section>
-
-      <section class="card learn" id="learn">
-        <div class="card-head">
-          <h2>Understanding tokens</h2>
-          <span class="muted">The basics — no prior experience needed</span>
-        </div>
-
-        <p class="learn-lead">
-          AI models don't read text the way you do. Before a prompt reaches the
-          model, it's chopped into small pieces called <strong>tokens</strong>.
-          Models read and bill by the token, so understanding them is the first
-          step to predicting and controlling your API costs.
-        </p>
-
-        <div class="example">
-          <div class="example-row">
-            <span class="example-label">Your text</span>
-            <span class="example-text">"Tokenization is fun!"</span>
-          </div>
-          <div class="example-row">
-            <span class="example-label">Becomes 5 tokens</span>
-            <span class="tokens">
-              <span class="tok">Token</span>
-              <span class="tok">ization</span>
-              <span class="tok">&#9251;is</span>
-              <span class="tok">&#9251;fun</span>
-              <span class="tok">!</span>
-            </span>
-          </div>
-        </div>
-
-        <div class="learn-grid">
-          <article class="learn-item">
-            <h3>What is a token?</h3>
-            <p>
-              A token is a chunk of text — a short word like <em>cat</em>, part
-              of a longer word (<em>token</em>&nbsp;+&nbsp;<em>ization</em>), a
-              piece of punctuation, or a single character. Each model has its own
-              fixed vocabulary of roughly 100,000–200,000 tokens, so the same
-              text can split differently between providers.
-            </p>
-          </article>
-
-          <article class="learn-item">
-            <h3>Why tokens matter</h3>
-            <p>
-              Providers charge per token, priced per million and split into two
-              rates: <strong>input</strong> (what you send) and
-              <strong>output</strong> (what the model writes back). Output is
-              usually 3–5× more expensive than input. Your bill is based on token
-              count — not word count.
-            </p>
-          </article>
-
-          <article class="learn-item">
-            <h3>Input vs. output</h3>
-            <p>
-              <strong>Input tokens</strong> are everything you send: your
-              instructions, pasted text or code, and earlier conversation.
-              <strong>Output tokens</strong> are what the model generates. Total
-              cost = <em>input tokens × input price + output tokens × output
-              price</em>.
-            </p>
-          </article>
-
-          <article class="learn-item">
-            <h3>Context window</h3>
-            <p>
-              Every model has a maximum amount of text it can consider at once —
-              input <em>and</em> output combined. This is the context window.
-              Exceed it and older content gets dropped, or the request is
-              rejected.
-            </p>
-          </article>
-        </div>
-
-        <div class="learn-cols">
-          <div>
-            <h3>Rules of thumb</h3>
-            <ul class="learn-list">
-              <li>1 token ≈ 4 characters of English</li>
-              <li>1 token ≈ ¾ of a word</li>
-              <li>100 tokens ≈ 75 words</li>
-              <li>A short paragraph ≈ 100–150 tokens</li>
-              <li>Code, symbols, and non-English text use <em>more</em> tokens per word</li>
-            </ul>
-          </div>
-          <div>
-            <h3>How to spend less</h3>
-            <ul class="learn-list">
-              <li>Send only the context the model actually needs</li>
-              <li>Summarize long chats instead of resending every message</li>
-              <li>Use a smaller, cheaper model for simple tasks</li>
-              <li>Set a max output length so replies can't run away</li>
-              <li>Batch related questions into a single request</li>
-            </ul>
-          </div>
-        </div>
-
-        <p class="learn-foot">
-          Quick estimate: divide a character count by 4 to approximate tokens.
-          This tool counts OpenAI models exactly with the
-          <code>o200k_base</code> tokenizer and approximates the rest.
-        </p>
-      </section>
     </main>
 
     <footer class="footer">
@@ -278,6 +278,10 @@
           Prices in USD per 1M tokens from official provider pages (Oct 2026).
           Providers change prices often — verify before budgeting. Everything
           runs client-side; your text is never uploaded.
+        </p>
+        <p class="credit">
+          Created by
+          <a href="https://yashwanthtadikondaportfolio.netlify.app/" target="_blank" rel="noopener noreferrer">Yashwanth Tadikonda</a>
         </p>
       </div>
     </footer>

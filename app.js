@@ -35,6 +35,7 @@ const els = {
 
 let encoder = null;
 let inputTokens = 0;
+let outputFollowsInput = true;
 
 function estimateTokens(text) {
   return text ? Math.ceil(text.length / 4) : 0;
@@ -167,7 +168,11 @@ function renderCompare() {
 function syncPresetActive() {
   const v = String(outputTokenCount());
   els.presets.querySelectorAll("button").forEach((b) => {
-    b.classList.toggle("active", b.dataset.v === v);
+    if (b.dataset.v === "match") {
+      b.classList.toggle("active", outputFollowsInput);
+    } else {
+      b.classList.toggle("active", !outputFollowsInput && b.dataset.v === v);
+    }
   });
 }
 
@@ -177,8 +182,10 @@ function refreshInputStats() {
   els.statWords.textContent = fmtNum(text.trim() ? text.trim().split(/\s+/).length : 0);
   els.statLines.textContent = fmtNum(text ? text.split(/\r\n|\r|\n/).length : 0);
   inputTokens = countTokens(text);
+  if (outputFollowsInput) els.out.value = inputTokens;
   renderResults(selectedModel());
   renderCompare();
+  syncPresetActive();
 }
 
 function refreshAll() {
@@ -196,6 +203,7 @@ els.text.addEventListener("input", () => {
 els.model.addEventListener("change", refreshAll);
 
 els.out.addEventListener("input", () => {
+  outputFollowsInput = false;
   renderResults(selectedModel());
   renderCompare();
   syncPresetActive();
@@ -204,7 +212,13 @@ els.out.addEventListener("input", () => {
 els.presets.addEventListener("click", (e) => {
   const btn = e.target.closest("button");
   if (!btn) return;
-  els.out.value = btn.dataset.v === "match" ? Math.max(inputTokens, 0) : btn.dataset.v;
+  if (btn.dataset.v === "match") {
+    outputFollowsInput = true;
+    els.out.value = Math.max(inputTokens, 0);
+  } else {
+    outputFollowsInput = false;
+    els.out.value = btn.dataset.v;
+  }
   renderResults(selectedModel());
   renderCompare();
   syncPresetActive();
